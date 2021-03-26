@@ -1,0 +1,10 @@
+{
+  "name": "GreyBot",
+  "version": "0.0.0",
+  "description": "Discord bot for my server!",
+  "main": "bot.js",
+  "author": "DinkieShy",
+  "dependencies": {
+    "discord.js": "^12.5.1"
+  }
+}
