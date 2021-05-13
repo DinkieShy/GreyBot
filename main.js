@@ -52,6 +52,10 @@ client.on("message", function(msg){
 				menu("Which pronouns would you like?", managedPronouns, msg, pronouns);
 			break;
 
+			case "managepronouns":
+				managePronouns(msg);
+			break;
+
 			case "manageroles":
 				manageRoles(msg);
 			break;
@@ -105,7 +109,13 @@ function pronouns(responses, msg){
 	managedResolved = []; //List of roles we're managing
 
 	for(i = 0; i < managedPronouns.length; i++){
-		managedResolved.push(msg.guild.roles.cache.find(item => item.name == managedPronouns[i]));
+		resolvedRole = msg.guild.roles.cache.find(item => item.name == managedPronouns[i]);
+		if(resolvedRole != undefined){
+			managedResolved.push(resolvedRole);
+		}
+		else{
+			managedPronouns.splice(i, 1);
+		}
 	}
 
 	for(i = 0; i < managedResolved.length; i++){ //Iterate through the roles we manage
@@ -170,7 +180,13 @@ function roles(responses, msg){
 	managedResolved = []; //List of roles we're managing
 
 	for(i = 0; i < managedRoles.length; i++){
-		managedResolved.push(msg.guild.roles.cache.find(item => item.name == managedRoles[i]));
+		resolvedRole = msg.guild.roles.cache.find(item => item.name == managedRoles[i]);
+		if(resolvedRole != undefined){
+			managedResolved.push(resolvedRole);
+		}
+		else{
+			managedRoles.splice(i, 1);
+		}
 	}
 
 	for(i = 0; i < managedResolved.length; i++){ //Iterate through the roles we manage
