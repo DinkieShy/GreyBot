@@ -81,9 +81,9 @@ function savePronouns(){
 }
 
 function managePronouns(msg){
-	rolesToChange = msg.content.split(" ").slice(1);
-	for(i = 0; i < rolesToChange.length; i++){
-		nextPronoun = msg.guild.roles.cache.find(item => item.name.toLowerCase() == rolesToChange[i].toLowerCase());
+	pronounsToChange = msg.content.split(" ").slice(1);
+	for(i = 0; i < pronounsToChange.length; i++){
+		nextPronoun = msg.guild.roles.cache.find(item => item.name.toLowerCase() == pronounsToChange[i].toLowerCase());
 		if(nextPronoun != undefined){
 			if(managedPronouns.includes(nextPronoun.name)){
 				managedPronouns.splice(managedPronouns.indexOf(nextPronoun.name), 1);
