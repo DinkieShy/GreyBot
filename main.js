@@ -127,7 +127,6 @@ function pronouns(responses, msg){
 	});
 }
 
-
 //Role selection
 
 managedRoles = [];
