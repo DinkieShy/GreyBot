@@ -6,6 +6,7 @@ const emojis = require("./emojis.json"); //The bot needs emojis and every one of
 
 const prefix = "!";
 
+testMode = false;
 if(process.platform == "win32") testMode = true;
 
 if(testMode){
