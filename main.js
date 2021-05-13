@@ -60,6 +60,17 @@ client.on("message", function(msg){
 				manageRoles(msg);
 			break;
 
+			case 'restart':
+        if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Admin") != undefined){
+          message.channel.send("Shutting down...");
+          savePatreon();
+          savePolls();
+          savePlayers();
+          client.destroy();
+          process.exit();
+        }
+      break;
+
 		}
 	}
 });
