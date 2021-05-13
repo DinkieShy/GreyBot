@@ -47,8 +47,12 @@ client.on("message", function(msg){
 				menu("Which roles would you like?", managedRoles, msg, roles);
 			break;
 
-			case "manage":
-				manage(msg);
+			case "pronouns":
+				menu("Which pronouns would you like?", managedPronouns, msg, pronouns);
+			break;
+
+			case "manageroles":
+				manageRoles(msg);
 			break;
 
 		}
@@ -56,6 +60,72 @@ client.on("message", function(msg){
 });
 
 //async function menu(question, options, message, doneFunction, offset = 0, responses = [], parameters = []){
+
+//Pronoun selection
+
+managedPronouns = ["they/them", "she/her", "he/him", "she/they", "he/they"];
+
+function loadPronouns(){
+	try{
+		managedPronouns = JSON.parse(fs.readFileSync("./storage/managedPronouns.json"));
+	}
+	catch(error){
+		console.log(error);
+		managedPronouns = ["they/them", "she/her", "he/him", "she/they", "he/they"];
+	}
+}
+
+function savePronouns(){
+	fs.writeFileSync("./storage/managedPronouns.json", JSON.stringify(managedPronouns));
+}
+
+function managePronouns(msg){
+	rolesToChange = msg.content.split(" ").slice(1);
+	for(i = 0; i < rolesToChange.length; i++){
+		nextPronoun = msg.guild.roles.cache.find(item => item.name.toLowerCase() == rolesToChange[i].toLowerCase());
+		if(nextPronoun != undefined){
+			if(managedPronouns.includes(nextPronoun.name)){
+				managedPronouns.splice(managedPronouns.indexOf(nextPronoun.name), 1);
+				msg.channel.send(`Removed ${nextPronoun.name} from the list of managed roles`);
+			}
+			else{
+				managedPronouns.push(nextPronoun.name);
+				msg.channel.send(`Added ${nextPronoun.name} to the list of managed roles`);
+			}
+		}
+	}
+	savePronouns();
+}
+
+function pronouns(responses, msg){
+	resolvedToAdd = [];
+	resolvedToRemove = [];
+	userPronouns = msg.member.roles.cache; //List of roles the user has
+	managedResolved = []; //List of roles we're managing
+
+	for(i = 0; i < managedPronouns.length; i++){
+		managedResolved.push(msg.guild.roles.cache.find(item => item.name == managedPronouns[i]));
+	}
+
+	for(i = 0; i < managedResolved.length; i++){ //Iterate through the roles we manage
+		nextPronoun = managedResolved[i];
+		userHasRole = userPronouns.find(item => item.name == nextPronoun.name) != undefined;
+		if(responses.includes(i)){ 
+			if(!userHasRole){
+				resolvedToAdd.push(nextPronoun);
+			}
+		}
+		else if(userHasRole){
+			//if user has role
+			resolvedToRemove.push(nextPronoun);
+		}
+	}
+
+	removeRole(resolvedToRemove, msg).then(function(){
+		addRole(resolvedToAdd, msg);
+	});
+}
+
 
 //Role selection
 
@@ -75,7 +145,7 @@ function saveRoles(){
 	fs.writeFileSync("./storage/managedRoles.json", JSON.stringify(managedRoles));
 }
 
-function manage(msg){
+function manageRoles(msg){
 	rolesToChange = msg.content.split(" ").slice(1);
 	for(i = 0; i < rolesToChange.length; i++){
 		nextRole = msg.guild.roles.cache.find(item => item.name.toLowerCase() == rolesToChange[i].toLowerCase());
@@ -105,12 +175,15 @@ function roles(responses, msg){
 
 	for(i = 0; i < managedResolved.length; i++){ //Iterate through the roles we manage
 		nextRole = managedResolved[i];
-		if(userRoles.find(item => item.name == nextRole.name) != undefined){
+		userHasRole = userRoles.find(item => item.name == nextRole.name) != undefined;
+		if(responses.includes(i)){ 
+			if(!userHasRole){
+				resolvedToAdd.push(nextRole);
+			}
+		}
+		else if(userHasRole){
 			//if user has role
 			resolvedToRemove.push(nextRole);
-		}
-		else if(responses.includes(i)){ 
-			resolvedToAdd.push(nextRole);
 		}
 	}
 
