@@ -63,9 +63,8 @@ client.on("message", function(msg){
 			case 'restart':
         if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Admin") != undefined){
           message.channel.send("Shutting down...");
-          savePatreon();
-          savePolls();
-          savePlayers();
+          savePronouns();
+          saveRoles();
           client.destroy();
           process.exit();
         }
@@ -102,11 +101,11 @@ function managePronouns(msg){
 		if(nextPronoun != undefined){
 			if(managedPronouns.includes(nextPronoun.name)){
 				managedPronouns.splice(managedPronouns.indexOf(nextPronoun.name), 1);
-				msg.channel.send(`Removed ${nextPronoun.name} from the list of managed roles`);
+				msg.channel.send(`Removed ${nextPronoun.name} from the list of managed pronouns`);
 			}
 			else{
 				managedPronouns.push(nextPronoun.name);
-				msg.channel.send(`Added ${nextPronoun.name} to the list of managed roles`);
+				msg.channel.send(`Added ${nextPronoun.name} to the list of managed pronouns`);
 			}
 		}
 	}
