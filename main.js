@@ -55,12 +55,7 @@ client.on("message", function(msg){
 					msg.channel.send("This command only works in the server!");
 				}
 				else{
-	        if(msg.channel.guild.members.cache.get(msg.author.id).roles.cache.find(item => item.name == "Member") != undefined){
-						assignPronounRole(msg)
-					}
-					else{
-						msg.channel.send("You need the Members role first! Please check over the rules or ask Scruff for help");
-					}
+					assignPronounRole(msg);
 				}
 			break;
 
