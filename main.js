@@ -51,15 +51,15 @@ client.on("message", function(msg){
 			case 'pronouns':
 			case 'setpronouns':
 			case 'pronoun':
-				if(message.channel.type == "dm"){
-					message.channel.send("This command only works in the server!");
+				if(msg.channel.type == "dm"){
+					msg.channel.send("This command only works in the server!");
 				}
 				else{
-	        if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Member") != undefined){
-						assignPronounRole(message)
+	        if(msg.channel.guild.members.cache.get(msg.author.id).roles.cache.find(item => item.name == "Member") != undefined){
+						assignPronounRole(msg)
 					}
 					else{
-						message.channel.send("You need the Members role first! Please check over the rules or ask Scruff for help");
+						msg.channel.send("You need the Members role first! Please check over the rules or ask Scruff for help");
 					}
 				}
 			break;
@@ -73,8 +73,8 @@ client.on("message", function(msg){
 			break;
 
 			case 'restart':
-        if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Mods") != undefined){
-          message.channel.send("Shutting down...");
+        if(msg.channel.guild.members.cache.get(msg.author.id).roles.cache.find(item => item.name == "Mods") != undefined){
+          msg.channel.send("Shutting down...");
           savePronouns();
           saveRoles();
           client.destroy();
