@@ -48,8 +48,20 @@ client.on("message", function(msg){
 				menu("Which roles would you like?", managedRoles, msg, roles);
 			break;
 
-			case "pronouns":
-				menu("Which pronouns would you like?", managedPronouns, msg, pronouns);
+			case 'pronouns':
+			case 'setpronouns':
+			case 'pronoun':
+				if(message.channel.type == "dm"){
+					message.channel.send("This command only works in the server!");
+				}
+				else{
+	        if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Member") != undefined){
+						assignPronounRole(message)
+					}
+					else{
+						message.channel.send("You need the Members role first! Please check over the rules or ask Scruff for help");
+					}
+				}
 			break;
 
 			case "managepronouns":
@@ -78,73 +90,40 @@ client.on("message", function(msg){
 
 //Pronoun selection
 
-managedPronouns = ["they/them", "she/her", "he/him", "she/they", "he/they"];
-
-function loadPronouns(){
-	try{
-		managedPronouns = JSON.parse(fs.readFileSync("./storage/managedPronouns.json"));
+function assignPronounRole(message){
+	roleToAssign = message.content.toLowerCase().split(" ");
+	if(roleToAssign.length != 2 || roleToAssign[1] == ""){
+		message.channel.send("Usage example: `!pronouns they/them`");
 	}
-	catch(error){
-		console.log(error);
-		managedPronouns = ["they/them", "she/her", "he/him", "she/they", "he/they"];
-	}
-}
-
-function savePronouns(){
-	fs.writeFileSync("./storage/managedPronouns.json", JSON.stringify(managedPronouns));
-}
-
-function managePronouns(msg){
-	pronounsToChange = msg.content.split(" ").slice(1);
-	for(i = 0; i < pronounsToChange.length; i++){
-		nextPronoun = msg.guild.roles.cache.find(item => item.name.toLowerCase() == pronounsToChange[i].toLowerCase());
-		if(nextPronoun != undefined){
-			if(managedPronouns.includes(nextPronoun.name)){
-				managedPronouns.splice(managedPronouns.indexOf(nextPronoun.name), 1);
-				msg.channel.send(`Removed ${nextPronoun.name} from the list of managed pronouns`);
-			}
-			else{
-				managedPronouns.push(nextPronoun.name);
-				msg.channel.send(`Added ${nextPronoun.name} to the list of managed pronouns`);
-			}
-		}
-	}
-	savePronouns();
-}
-
-function pronouns(responses, msg){
-	resolvedToAdd = [];
-	resolvedToRemove = [];
-	userPronouns = msg.member.roles.cache; //List of roles the user has
-	managedResolved = []; //List of roles we're managing
-
-	for(i = 0; i < managedPronouns.length; i++){
-		resolvedRole = msg.guild.roles.cache.find(item => item.name == managedPronouns[i]);
-		if(resolvedRole != undefined){
-			managedResolved.push(resolvedRole);
+	roleToAssign = roleToAssign[1];
+	availablePronounRoles = message.guild.roles.cache.filter(item => item.name.includes("pronouns: "));
+	roleFound = false;
+	availablePronounRoles.each(function(role){
+		if(role.name.slice(10) == roleToAssign){
+			addRole(message.author, role.name, message.guild);
+			message.channel.send(`Pronouns set to ${roleToAssign}!`);
+			roleFound = true;
 		}
 		else{
-			managedPronouns.splice(i, 1);
-		}
-	}
-
-	for(i = 0; i < managedResolved.length; i++){ //Iterate through the roles we manage
-		nextPronoun = managedResolved[i];
-		userHasRole = userPronouns.find(item => item.name == nextPronoun.name) != undefined;
-		if(responses.includes(i)){ 
-			if(!userHasRole){
-				resolvedToAdd.push(nextPronoun);
+			if(role.members.get(message.author.id) != undefined){
+				removeRole(message.author, role.name, message.guild);
+			}
+			if(role.members.size == 0){
+				role.delete();
 			}
 		}
-		else if(userHasRole){
-			//if user has role
-			resolvedToRemove.push(nextPronoun);
-		}
-	}
-
-	removeRole(resolvedToRemove, msg).then(function(){
-		addRole(resolvedToAdd, msg);
 	});
+	if(!roleFound){
+		message.guild.roles.create({
+			data: {
+				name: "pronouns: " + roleToAssign
+			},
+			reason: `Adding pronoun role for ${message.author.username}`
+		}).then(newRole => {
+			addRole(message.author, newRole.name, message.guild);
+			message.channel.send(`Pronouns set to ${roleToAssign}!`);
+		});
+	}
 }
 
 //Role selection
