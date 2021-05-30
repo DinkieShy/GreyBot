@@ -73,7 +73,7 @@ client.on("message", function(msg){
 			break;
 
 			case 'restart':
-        if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Admin") != undefined){
+        if(message.channel.guild.members.cache.get(message.author.id).roles.cache.find(item => item.name == "Mods") != undefined){
           message.channel.send("Shutting down...");
           savePronouns();
           saveRoles();
