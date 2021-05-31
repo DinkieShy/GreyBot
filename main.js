@@ -68,13 +68,14 @@ client.on("message", function(msg){
 			break;
 
 			case 'restart':
-        if(msg.channel.guild.members.cache.get(msg.author.id).roles.cache.find(item => item.name == "Mods") != undefined){
-          msg.channel.send("Shutting down...");
-          savePronouns();
-          saveRoles();
-          client.destroy();
-          process.exit();
-        }
+				if(msg.channel.type != "dm"){
+	        if(msg.channel.guild.members.cache.get(msg.author.id).roles.cache.find(item => item.name == "Mods") != undefined){
+	          msg.channel.send("Shutting down...");
+	          saveRoles();
+	          client.destroy();
+	          process.exit();
+	        }
+	      }
       break;
 
 		}
@@ -89,19 +90,20 @@ function assignPronounRole(message){
 	roleToAssign = message.content.toLowerCase().split(" ");
 	if(roleToAssign.length != 2 || roleToAssign[1] == ""){
 		message.channel.send("Usage example: `!pronouns they/them`");
+		return;
 	}
 	roleToAssign = roleToAssign[1];
 	availablePronounRoles = message.guild.roles.cache.filter(item => item.name.includes("pronouns: "));
 	roleFound = false;
 	availablePronounRoles.each(function(role){
 		if(role.name.slice(10) == roleToAssign){
-			addRole(message.author, role.name, message.guild);
+			message.member.roles.add(role);
 			message.channel.send(`Pronouns set to ${roleToAssign}!`);
 			roleFound = true;
 		}
 		else{
 			if(role.members.get(message.author.id) != undefined){
-				removeRole(message.author, role.name, message.guild);
+				message.member.roles.remove(role);
 			}
 			if(role.members.size == 0){
 				role.delete();
@@ -115,7 +117,7 @@ function assignPronounRole(message){
 			},
 			reason: `Adding pronoun role for ${message.author.username}`
 		}).then(newRole => {
-			addRole(message.author, newRole.name, message.guild);
+			message.member.roles.add(newRole);
 			message.channel.send(`Pronouns set to ${roleToAssign}!`);
 		});
 	}
