@@ -1,10 +1,15 @@
 {
-  "name": "GreyBot",
-  "version": "0.0.0",
-  "description": "Discord bot for my server!",
-  "main": "bot.js",
-  "author": "DinkieShy",
+  "name": "Greybot",
+  "version": "2.0.0",
+  "description": "Discord bot",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "dinkieshy",
+  "license": "Apache-2.0",
   "dependencies": {
-    "discord.js": "^12.5.3"
+    "discord.js": "^14.11.0"
   }
 }
