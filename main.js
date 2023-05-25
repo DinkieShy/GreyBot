@@ -1,298 +1,195 @@
-const discord = require("discord.js"); //Discord.js npm
-const client = new discord.Client(); //The client variable for the bot
-const auth = require("./secret/auth.json"); //The auth token the bot uses to log in, found in auth.json
-const fs = require("fs"); //This lets the bot read and write files
-const emojis = require("./emojis.json"); //The bot needs emojis and every one of them is a butt
 
-const prefix = "!";
+TEST_MODE = false;
 
-testMode = false;
-if(process.platform == "win32") testMode = true;
+const {Client, Collection, GatewayIntentBits, REST, Routes} = require('discord.js');
+const fs = require('fs');
 
-if(testMode){
-	client.login(auth.testToken).catch(function(err){
-    console.log(err);
-    process.exit();
-  });
-}
-else{
-	client.login(auth.token).catch(function(err){
-    console.log(err);
-    process.exit();
-  });
-}
+const auth = require("./secret/auth.json");
+const client = new Client({ intents: [
+	GatewayIntentBits.Guilds,
+	GatewayIntentBits.GuildMembers,
+	GatewayIntentBits.GuildMessages,
+	GatewayIntentBits.DirectMessages] });
 
-console.log("Loaded!");
+// LOGIN / AUTHENTICATE
 
-client.on("ready", function(){
-  console.log(`Logged in as ${client.user.tag}`);
-
-  loadRoles();
+client.once('ready', () => {
+	console.log('Ready!');
+	console.log(`Logged in as ${client.user.tag}!`);
+	deployCommands();
 });
 
-client.on("message", function(msg){
-	if(msg.content[0] == prefix){
-		command = msg.content.split(" ")[0].slice(1, msg.content.length);
-		
-		console.log(command);
-		switch(command){
-			case "ping":
-				ping(msg);
-			break;
-
-			case "help":
-				help(msg);
-			break;
-
-			case "roles":
-				menu("Which roles would you like?", managedRoles, msg, roles);
-			break;
-
-			case 'pronouns':
-			case 'setpronouns':
-			case 'pronoun':
-				if(msg.channel.type == "dm"){
-					msg.channel.send("This command only works in the server!");
-				}
-				else{
-					assignPronounRole(msg);
-				}
-			break;
-
-			case "managepronouns":
-				managePronouns(msg);
-			break;
-
-			case "manageroles":
-				manageRoles(msg);
-			break;
-
-			case 'restart':
-				if(msg.channel.type != "dm"){
-	        if(msg.channel.guild.members.cache.get(msg.author.id).roles.cache.find(item => item.name == "Mods") != undefined){
-	          msg.channel.send("Shutting down...");
-	          saveRoles();
-	          client.destroy();
-	          process.exit();
-	        }
-	      }
-      break;
-
-		}
-	}
-});
-
-//async function menu(question, options, message, doneFunction, offset = 0, responses = [], parameters = []){
-
-//Pronoun selection
-
-function assignPronounRole(message){
-	roleToAssign = message.content.toLowerCase().split(" ");
-	if(roleToAssign.length != 2 || roleToAssign[1] == ""){
-		message.channel.send("Usage example: `!pronouns they/them`");
-		return;
-	}
-	roleToAssign = roleToAssign[1];
-	availablePronounRoles = message.guild.roles.cache.filter(item => item.name.includes("pronouns: "));
-	roleFound = false;
-	availablePronounRoles.each(function(role){
-		if(role.name.slice(10) == roleToAssign){
-			message.member.roles.add(role);
-			message.channel.send(`Pronouns set to ${roleToAssign}!`);
-			roleFound = true;
-		}
-		else{
-			if(role.members.get(message.author.id) != undefined){
-				message.member.roles.remove(role);
-			}
-			if(role.members.size == 0){
-				role.delete();
-			}
-		}
-	});
-	if(!roleFound){
-		message.guild.roles.create({
-			data: {
-				name: "pronouns: " + roleToAssign
-			},
-			reason: `Adding pronoun role for ${message.author.username}`
-		}).then(newRole => {
-			message.member.roles.add(newRole);
-			message.channel.send(`Pronouns set to ${roleToAssign}!`);
-		});
-	}
+token = auth.token;
+GUILD_ID = auth.guild;
+if(TEST_MODE == true){
+	GUILD_ID = auth.testGuild;
+	token = auth.test;
 }
 
-//Role selection
+client.login(token);
+client.commands = new Collection();
 
-managedRoles = [];
+// SET UP COMMANDS
 
-function loadRoles(){
+async function deployCommands(){
+	client.commands.clear();
+	const commands = [];
+	var commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+
+	for (const file of commandFiles) {
+		const command = require(`./commands/${file}`);
+		commands.push(command.data.toJSON());
+		client.commands.set(command.data.name, command);
+	}
+
+	const rest = new REST({ version: '10' }).setToken(token);
+
 	try{
-		managedRoles = JSON.parse(fs.readFileSync("./storage/managedRoles.json"));
+		console.log("Refreshing application commands");
+		await rest.put(Routes.applicationCommands(client.user.id), { body: commands })
+		console.log('Successfully registered application commands.')
 	}
-	catch(error){
-		console.log(error);
-		managedRoles = ["Stream Pings", "testRole1", "testRole2"];
+	catch(err){
+		console.error(err);
 	}
 }
 
-function saveRoles(){
-	fs.writeFileSync("./storage/managedRoles.json", JSON.stringify(managedRoles));
-}
+// HANDLE COMMANDS
 
-function manageRoles(msg){
-	rolesToChange = msg.content.split(" ").slice(1);
-	for(i = 0; i < rolesToChange.length; i++){
-		nextRole = msg.guild.roles.cache.find(item => item.name.toLowerCase() == rolesToChange[i].toLowerCase());
-		if(nextRole != undefined){
-			if(managedRoles.includes(nextRole.name)){
-				managedRoles.splice(managedRoles.indexOf(nextRole.name), 1);
-				msg.channel.send(`Removed ${nextRole.name} from the list of managed roles`);
+client.on('interactionCreate', async interaction => {
+	if(interaction.isCommand()){
+		const command = client.commands.get(interaction.commandName);
+
+		if (!command){
+			return;
+		}
+
+		try {
+			await command.execute(interaction);
+		} catch (error) {
+			console.error(error);
+			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		}
+	}
+	else if(interaction.user == interaction.message.interaction.user){
+		if(interaction.isSelectMenu()){
+			if(interaction.customId != "ignore"){
+				disableComponents(interaction);
+
+				const commandName = interaction.message.interaction.commandName;
+				const command = client.commands.get(commandName);
+
+				try{
+					await command.menuFollowUp(interaction);
+				} catch (error) {
+					console.error(error);
+					await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+				}
+			}
+		}
+		else if(interaction.isButton()){
+			const commandName = interaction.message.interaction.commandName;
+			const command = client.commands.get(commandName);
+
+			if(interaction.customId == "cancel"){
+				try{
+					await command.cancelButtonFollowUp(interaction);
+				} catch (error) {
+					console.error(error);
+					await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+				}
 			}
 			else{
-				managedRoles.push(nextRole.name);
-				msg.channel.send(`Added ${nextRole.name} to the list of managed roles`);
+				disableComponents(interaction);
+				try{
+					await command.buttonFollowUp(interaction);
+				} catch (error) {
+					console.error(error);
+					await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+				}
 			}
 		}
 	}
-	saveRoles();
+});
+
+// HANDLE NON-COMMAND MESSAGES
+
+client.on('messageCreate', async message => {
+	bot = await message.author.bot;
+	content = await message.content;
+	if(!bot && content.split(' ')[0].toLowerCase() == "bot,"){
+		choose(message);
+	}
+	else if(content[0] == "!"){
+		command = content.split(" ")[0].replace("!", "").toLowerCase();
+		switch(command){
+			case "join":
+				join(message);
+			break;
+
+			case "first":
+				first(message);
+			break;
+		}
+	}
+});
+
+// FIRST
+
+async function first(message){
+	await message.reply(`${message.author.username} was first for... Something! Probably!`);
 }
 
-function roles(responses, msg){
-	resolvedToAdd = [];
-	resolvedToRemove = [];
-	userRoles = msg.member.roles.cache; //List of roles the user has
-	managedResolved = []; //List of roles we're managing
+// JOIN
 
-	for(i = 0; i < managedRoles.length; i++){
-		resolvedRole = msg.guild.roles.cache.find(item => item.name == managedRoles[i]);
-		if(resolvedRole != undefined){
-			managedResolved.push(resolvedRole);
+async function join(message){
+	const memberRole = await message.guild.roles.cache.find(role => role.name == "Member");
+	if(!message.member.roles.cache.has(memberRole.id)){
+		await message.member.roles.add(memberRole);
+		await message.author.send("Welcome to the fox den!");
+	}
+	await message.delete();
+}
+
+// EIGHT-BALL
+
+eightBallChoices = ["Absolutely", "Probably", "Maybe", "Ask again later", "Not sure", "Probably not", "Definitely not", "Heck yeah",
+"01000101 01010010 01010010 01001111 01010010 00111010 00100000 01010100 01101111 01101111 00100000 01100100 01110101 01101101 01100010 00101100 00100000 01100011 01100001 01101110 01101110 01101111 01110100 00100000 01100010 01110010 01100001 01101001 01101110 00101110",
+"Up to you"];
+restrictedEightballChoices = ["Absolutely", "Probably", "Probably not", "Definitely not", "Heck yeah", "Heck no"];
+
+async function choose(message){
+	var seperators = [" or ", ", "];
+	var options = (await message.content).replace('?', '').split(new RegExp(seperators.join("|"))).splice(1);
+	var choice = options[getRandomInt(options.length)];
+
+	if(choice == undefined){
+		choice = "What?";
+	}
+	else{
+		if(options.length == 1){
+			choice = eightBallChoices[getRandomInt(eightBallChoices.length)];
 		}
-		else{
-			managedRoles.splice(i, 1);
+		if(options.length <= 2 && (options[0].toLowerCase() == "please" || options[0].toLowerCase() == "pls")){
+			choice = restrictedEightballChoices[getRandomInt(restrictedEightballChoices.length)];
 		}
 	}
 
-	for(i = 0; i < managedResolved.length; i++){ //Iterate through the roles we manage
-		nextRole = managedResolved[i];
-		userHasRole = userRoles.find(item => item.name == nextRole.name) != undefined;
-		if(responses.includes(i)){ 
-			if(!userHasRole){
-				resolvedToAdd.push(nextRole);
-			}
-		}
-		else if(userHasRole){
-			//if user has role
-			resolvedToRemove.push(nextRole);
+	message.channel.send(choice);
+}
+
+// UTIL
+
+function getRandomInt(max){
+  return Math.floor(Math.random() * max);
+}
+
+async function disableComponents(interaction){
+	var messageComponents = interaction.message.components;
+	for(var i = 0; i < messageComponents.length; i++){
+		for(var ii = 0; ii < messageComponents[i].components.length; ii++){
+			messageComponents[i].components[ii].setDisabled(true);
 		}
 	}
-
-	removeRole(resolvedToRemove, msg).then(function(){
-		addRole(resolvedToAdd, msg);
-	});
-}
-
-function addRole(roleToAdd, msg){
-	promise = msg.member.roles.add(roleToAdd);
-	if(roleToAdd.length > 0){
-		if(roleToAdd.length == 1){
-			msg.channel.send("Added 1 role!");
-		}
-		else{
-			msg.channel.send(`Added ${roleToAdd.length} roles!`);
-		}
-	}
-	return promise;
-}
-
-function removeRole(roleToRemove, msg){
-	promise = msg.member.roles.remove(roleToRemove);
-	if(roleToRemove.length > 0){
-		if(roleToRemove.length == 1){
-			msg.channel.send("Removed 1 role!");
-		}
-		else{
-			msg.channel.send(`Removed ${roleToRemove.length} roles!`);
-		}
-	}
-	return promise;
-}
-
-async function menu(question, options, message, doneFunction, offset = 0, responses = [], parameters = []){
-  var embed = {
-    title: question,
-    fields: [],
-    footer:{text:""}
-  }
-  for(var i = offset; i < options.length && i < offset + 5; i++){
-    embed.fields.push({"name":"**" + (i - offset + 1) + ":**","value":options[i]});
-  }
-  message.channel.send({embed}).then(async function(newMessage){
-    var done;
-    var filter = (reaction, user) => user.id == message.author.id
-    var collector = newMessage.createReactionCollector(filter);
-    collector.on('collect', r => {
-      if(r.emoji.name == emojis["white_check_mark"]){
-        done = true;
-        collector.stop();
-      }
-      else if(r.emoji.name == emojis["arrow_right"]){
-        done = false;
-        collector.stop();
-        menu(question, options, message, doneFunction, offset+5, responses, parameters);
-      }
-      else if(r.emoji.name == emojis["arrow_left"]){
-        done = false;
-        collector.stop();
-        menu(question, options, message, doneFunction, offset-5, responses, parameters);
-      }
-      else if(responses.indexOf(parseInt(r.emoji.identifier[0])-1+offset) == -1){
-        responses.push(parseInt(r.emoji.identifier[0])-1+offset);
-      }
-    });
-    collector.on('dispose', function(r){
-    	console.log("Reaction removed!");
-    	index = responses.indexOf(parseInt(r.emoji.identifier[0])-1+offset);
-    	if(index != -1){
-        responses.splice(index, 1);
-      }
-    });
-    collector.on('end', function(){
-      if(done){
-				if(parameters == []){
-        	doneFunction(responses, message);
-				}
-				else{
-					doneFunction(responses, message, parameters);
-				}
-      }
-      newMessage.delete();
-    });
-    try{
-	    if(offset - 5 >= 0){
-	      await newMessage.react(emojis["arrow_left"]);
-	    }
-	    for(var i = offset; i < options.length && i < offset + 5;){
-	      await newMessage.react((i-offset+1).toString() + "%E2%83%A3").then(i++);
-	    }
-	    if(options.length > offset + 5){
-	      await newMessage.react(emojis["arrow_right"]);
-	    }
-    	done = await newMessage.react(emojis["white_check_mark"]).catch(console.error);
-	  }
-	  catch(DiscordAPIError){
-	  	//Message probably deleted, no biggie, just stop trying to do that
-	  	return
-	  }
-  });
-}
-
-function ping(msg){
-	msg.channel.send("Pong!");
-}
-
-function help(msg){
-	msg.channel.send("I don't know ;-;");
+	await interaction.message.edit({components: messageComponents});
 }
