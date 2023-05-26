@@ -26,5 +26,18 @@ module.exports = {
 		catch(error){
 			console.log(error);
 		}
+	},
+	getRandomInt(max){
+	  return Math.floor(Math.random() * max);
+	},
+	async disableComponents(interaction){
+		var messageComponents = interaction.message.components;
+		for(var i = 0; i < messageComponents.length; i++){
+			for(var ii = 0; ii < messageComponents[i].components.length; ii++){
+				messageComponents[i].components[ii].setDisabled(true);
+			}
+		}
+		await interaction.message.edit({components: messageComponents});
 	}
 }
+

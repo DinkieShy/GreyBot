@@ -4,7 +4,7 @@ TEST_MODE = false;
 const {Client, Collection, GatewayIntentBits, REST, Routes} = require('discord.js');
 const fs = require('fs');
 
-import "./utils.js";
+const {getRandomInt, disableComponents} = require("./utils.js");
 
 const auth = require("./secret/auth.json");
 const client = new Client({ intents: [
