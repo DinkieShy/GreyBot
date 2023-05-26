@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const utils = require("../utils.js");
 
 module.exports = {
@@ -10,6 +9,10 @@ module.exports = {
 	.addRoleOption(option =>
 		option.setName("role")
 		.setDescription("The role to add or remove from the menu")
+		.setRequired(true))
+	.addStringOption(option =>
+		option.setName("description")
+		.setDescription("A description of the role")
 		.setRequired(true)),
 
 	async getPermissions(guild){
@@ -26,7 +29,7 @@ module.exports = {
 		var found = -1;
 
 		for(var i = 0; i < managedRoles.length; i++){
-			if(managedRoles[i] == role.id){
+			if(managedRoles[i][0] == role.id){
 				found = i;
 				break;
 			}
@@ -38,7 +41,7 @@ module.exports = {
 		}
 		else{
 			operation = "added";
-			managedRoles.push(role.id);
+			managedRoles.push([role.id, interaction.options.getString("description")]);
 		}
 
 		await utils.saveFile("managedRoles", managedRoles);

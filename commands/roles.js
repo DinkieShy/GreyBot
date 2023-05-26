@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const utils = require("../utils.js");
 
 module.exports = {
@@ -21,33 +20,36 @@ module.exports = {
 		var options = [];
 
 		for(var i = 0; i < managedRoles.length; i++){
-			const role = await interaction.guild.roles.fetch(managedRoles[i]);
-			options.push({
-				"label": `${role.name}`,
-				"value": managedRoles[i]
-			});
+			const role = await interaction.guild.roles.fetch(managedRoles[i][0]);
+			options.push(
+				new StringSelectMenuOptionBuilder()
+				.setLabel(`${role.name}`)
+				.setValue(managedRoles[i][0])
+				.setDescription(managedRoles[i][1])
+			);
 		}
 
-		const menu = new MessageActionRow()
+		const menu = new ActionRowBuilder()
 			.addComponents(
-				new MessageSelectMenu()
+				new StringSelectMenuOptionBuilder()
 					.setCustomId("select")
 					.setPlaceholder("Nothing Selected")
 					.addOptions(options)
 					.setMinValues(1)
 			);
 
-		const cancelButton = new MessageActionRow()
+		const cancelButton = new ActionRowBuilder()
 			.addComponents(
-				new MessageButton()
+				new ButtonBuilder()
 					.setCustomId("cancel")
 					.setLabel("Cancel")
-					.setStyle("DANGER"))
+					.setStyle(ButtonStyle.Danger)
+			)
 			.addComponents(
-				new MessageButton()
+				new ButtonBuilder()
 					.setCustomId("removeAll")
 					.setLabel("Remove All")
-					.setStyle("DANGER")
+					.setStyle(ButtonStyle.Danger)
 			);
 
 		interaction.reply({
@@ -63,9 +65,9 @@ module.exports = {
 			var removedRoles = 0;
 
 			for(var i = 0; i < managedRoles.length; i++){
-				var add = (interaction.values.indexOf(managedRoles[i]) != -1);
-				var alreadyHas = interaction.member.roles.cache.has(managedRoles[i]);
-				var role = await interaction.guild.roles.fetch(managedRoles[i]);
+				var add = (interaction.values.indexOf(managedRoles[i][0]) != -1);
+				var alreadyHas = interaction.member.roles.cache.has(managedRoles[i][0]);
+				var role = await interaction.guild.roles.fetch(managedRoles[i][0]);
 
 				if(add && !alreadyHas){
 					await interaction.member.roles.add(role);
@@ -86,8 +88,8 @@ module.exports = {
 		var removedRoles = 0;
 
 		for(var i = 0; i < managedRoles.length; i++){
-			var alreadyHas = interaction.member.roles.cache.has(managedRoles[i]);
-			var role = await interaction.guild.roles.fetch(managedRoles[i]);
+			var alreadyHas = interaction.member.roles.cache.has(managedRoles[i][0]);
+			var role = await interaction.guild.roles.fetch(managedRoles[i][0]);
 
 			if(alreadyHas){
 				await interaction.member.roles.remove(role);
