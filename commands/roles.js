@@ -32,7 +32,7 @@ module.exports = {
 		const menu = new ActionRowBuilder()
 			.addComponents(
 				new StringSelectMenuOptionBuilder()
-					.setCustomId("select")
+					.setValue("select")
 					.setPlaceholder("Nothing Selected")
 					.addOptions(options)
 					.setMinValues(1)
@@ -41,13 +41,13 @@ module.exports = {
 		const cancelButton = new ActionRowBuilder()
 			.addComponents(
 				new ButtonBuilder()
-					.setCustomId("cancel")
+					.setValue("cancel")
 					.setLabel("Cancel")
 					.setStyle(ButtonStyle.Danger)
 			)
 			.addComponents(
 				new ButtonBuilder()
-					.setCustomId("removeAll")
+					.setValue("removeAll")
 					.setLabel("Remove All")
 					.setStyle(ButtonStyle.Danger)
 			);
