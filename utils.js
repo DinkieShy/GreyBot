@@ -9,7 +9,7 @@ module.exports = {
 	},
 	async loadFile(filename){
 		var contents = [];
-		const filepath = path.join(__dirname, `../storage/${filename}.json`);
+		const filepath = path.join(__dirname, `./storage/${filename}.json`);
 		try{
 			contents = JSON.parse(fs.readFileSync(filepath));
 		}
@@ -19,7 +19,7 @@ module.exports = {
 		return contents;
 	},
 	async saveFile(filename, contents){
-		const filepath = path.join(__dirname, `../storage/${filename}.json`);
+		const filepath = path.join(__dirname, `./storage/${filename}.json`);
 		try{
 			fs.writeFileSync(filepath, JSON.stringify(contents));
 		}

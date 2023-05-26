@@ -4,6 +4,8 @@ TEST_MODE = false;
 const {Client, Collection, GatewayIntentBits, REST, Routes} = require('discord.js');
 const fs = require('fs');
 
+import "./utils.js";
+
 const auth = require("./secret/auth.json");
 const client = new Client({ intents: [
 	GatewayIntentBits.Guilds,
@@ -181,16 +183,3 @@ async function choose(message){
 
 // UTIL
 
-function getRandomInt(max){
-  return Math.floor(Math.random() * max);
-}
-
-async function disableComponents(interaction){
-	var messageComponents = interaction.message.components;
-	for(var i = 0; i < messageComponents.length; i++){
-		for(var ii = 0; ii < messageComponents[i].components.length; ii++){
-			messageComponents[i].components[ii].setDisabled(true);
-		}
-	}
-	await interaction.message.edit({components: messageComponents});
-}
