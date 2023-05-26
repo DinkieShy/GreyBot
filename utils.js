@@ -34,7 +34,7 @@ module.exports = {
 		var messageComponents = interaction.message.components;
 		for(var i = 0; i < messageComponents.length; i++){
 			for(var ii = 0; ii < messageComponents[i].components.length; ii++){
-				messageComponents[i].components[ii].setDisabled(true);
+				messageComponents[i].components[ii].disabled = true;
 			}
 		}
 		await interaction.message.edit({components: messageComponents});
