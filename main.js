@@ -75,7 +75,7 @@ client.on('interactionCreate', async interaction => {
 		}
 	}
 	else if(interaction.user == interaction.message.interaction.user){
-		if(interaction.isSelectMenu()){
+		if(interaction.isStringSelectMenu()){
 			if(interaction.customId != "ignore"){
 				disableComponents(interaction);
 
@@ -180,6 +180,3 @@ async function choose(message){
 
 	message.channel.send(choice);
 }
-
-// UTIL
-
