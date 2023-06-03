@@ -27,7 +27,7 @@ module.exports = {
 
 		const existingRole = roles.find(role => role.name.slice(10) == roleToAssign);
 		if(existingRole != undefined){
-			await interaction.member.roles.add(existingRole).then(async newMember => {
+			await interaction.member.roles.add(existingRole, `Adding new pronoun role to ${interaction.user.username}`).then(async newMember => {
 				await interaction.reply("Enjoy your new pronoun role!");
 			}).catch(async error => {
 				await interaction.followUp("There was an error! Please poke Grey ;-; (pronouns.js:30)");
