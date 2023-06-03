@@ -1,4 +1,5 @@
 secret/
+storage/*
 
 # Logs
 logs
