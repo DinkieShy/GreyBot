@@ -24,7 +24,7 @@ client.once('ready', () => {
 
 token = auth.token;
 GUILD_ID = auth.guild;
-if(TEST_MODE == true){
+if(TEST_MODE){
 	GUILD_ID = auth.testGuild;
 	token = auth.test;
 }
