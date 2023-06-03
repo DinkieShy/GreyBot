@@ -46,10 +46,12 @@ module.exports = {
 			});
 		}
 
-		interaction.guild.roles.filter(role => role.name.slice(0,10) == "pronouns: ").each(async role => {
-			if(role.members.size == 0){
-				await role.delete("Deleting unused pronoun role");
-			}
+		interaction.guild.roles.fetch().then(async roles => { 
+			roles.filter(role => role.name.slice(0,10) == "pronouns: ").each(async role => {
+				if(role.members.size == 0){
+					await role.delete("Deleting unused pronoun role");
+				}
+			});
 		});
 	}
 }
