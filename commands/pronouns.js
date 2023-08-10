@@ -29,6 +29,14 @@ module.exports = {
 		if(existingRole != undefined){
 			await interaction.member.roles.add(existingRole, `Adding new pronoun role to ${interaction.user.username}`).then(async newMember => {
 				await interaction.reply("Enjoy your new pronoun role!");
+
+				interaction.guild.roles.fetch().then(async roles => { 
+					roles.filter(role => role.name.slice(0,10) == "pronouns: ").each(async role => {
+						if(role.members.size == 0){
+							await role.delete("Deleting unused pronoun role");
+						}
+					});
+				});
 			}).catch(async error => {
 				await interaction.followUp("There was an error! Please poke Grey ;-; (pronouns.js:30)");
 			});
@@ -40,18 +48,18 @@ module.exports = {
 			}).then(async newRole => {
 				interaction.member.roles.add(newRole);
 				await interaction.reply("Enjoy your new pronoun role!");
+
+				interaction.guild.roles.fetch().then(async roles => { 
+					roles.filter(role => role.name.slice(0,10) == "pronouns: ").each(async role => {
+						if(role.members.size == 0){
+							await role.delete("Deleting unused pronoun role");
+						}
+					});
+				});
 			}).catch(async error => {
 				console.log(error);
 				await interaction.followUp("There was an error! Please poke Grey ;-; (pronouns.js:42)");
 			});
 		}
-
-		interaction.guild.roles.fetch().then(async roles => { 
-			roles.filter(role => role.name.slice(0,10) == "pronouns: ").each(async role => {
-				if(role.members.size == 0){
-					await role.delete("Deleting unused pronoun role");
-				}
-			});
-		});
 	}
 }
