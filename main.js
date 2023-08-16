@@ -10,6 +10,7 @@ const auth = require("./secret/auth.json");
 const client = new Client({ intents: [
 	GatewayIntentBits.Guilds,
 	GatewayIntentBits.GuildMembers,
+	GatewayIntentBits.GuildPresences,
 	GatewayIntentBits.GuildMessages,
 	GatewayIntentBits.DirectMessages,
 	GatewayIntentBits.MessageContent] });

@@ -3,37 +3,45 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName("pronouns")
-		.setDescription("Give yourself a pronoun role!")
-		.setDefaultPermission(false)
+		.setDescription("Give yourself a pronoun role")
 		.addStringOption(option =>
 			option.setName("pronouns")
-			.setDescription("Your pronouns! Written like \"They/Them\"")
+			.setDescription("Your pronouns!")
 			.setRequired(true)),
 
-	async getPermissions(guild){
-	  return {
-        id: guild.roles.cache.find(item => item.name == "Member").id,
-        type: "ROLE",
-        permission: true
-      };
-	},
-
 	async execute(interaction){
-		const roleToAssign = interaction.options.getString("pronouns").trim().toLowerCase();
+		const roleToAssign = interaction.options.getString("pronouns");
 		const roles = await interaction.guild.roles.fetch();
+		const members = await interaction.guild.members.fetch();
+		const availablePronounRoles = roles.filter(item => item.name.includes("pronouns: "));
+		var roleFound = false;
 
-		const memberCurrentRoles = interaction.member.roles.cache.filter(role => role.name.slice(0,10) == "pronouns: ")
-		await interaction.member.roles.remove(memberCurrentRoles, `Removing old pronoun roles from ${interaction.user.username}`); 
+		availablePronounRoles.each(async role => {
+			if(role.name.slice(10) == roleToAssign){
+				roleFound = true;
+				await interaction.member.roles.add(role).then(async newMember => {
+					await interaction.reply("Enjoy your new pronoun role!");
+				}).catch(async error => {
+					console.log(error);
+					if (!interaction.isRepliable()){
+						await interaction.followUp({ content: 'There was an error while executing this command!'});
+					}
+					else{
+						await interaction.reply({ content: 'There was an error while executing this command!'});
+					}
+				});
+			}
+			else{
+				if(interaction.member.roles.cache.get(role.id) != undefined){
+					await interaction.member.roles.remove(role);
+				}
+				if(members.filter(member => member.roles.cache.get(role.id) != undefined && member.id != interaction.member.id).size == 0){
+					await role.delete("Not being used at the moment!");
+				}
+			}
+		});
 
-		const existingRole = roles.find(role => role.name.slice(10) == roleToAssign);
-		if(existingRole != undefined){
-			await interaction.member.roles.add(existingRole, `Adding new pronoun role to ${interaction.user.username}`).then(async newMember => {
-				await interaction.reply("Enjoy your new pronoun role!");
-			}).catch(async error => {
-				await interaction.followUp("There was an error! Please poke Grey ;-; (pronouns.js:30)");
-			});
-		}
-		else{
+		if(roleFound == false){
 			interaction.guild.roles.create({
 				name: "pronouns: " + roleToAssign,
 				reason: `Adding pronoun role for ${interaction.user.username}`
@@ -42,7 +50,12 @@ module.exports = {
 				await interaction.reply("Enjoy your new pronoun role!");
 			}).catch(async error => {
 				console.log(error);
-				await interaction.followUp("There was an error! Please poke Grey ;-; (pronouns.js:42)");
+				if (!interaction.isRepliable()){
+					await interaction.followUp({ content: 'There was an error while executing this command!'});
+				}
+				else{
+					await interaction.reply({ content: 'There was an error while executing this command!'});
+				}
 			});
 		}
 	}
