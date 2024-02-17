@@ -1,5 +1,5 @@
 
-TEST_MODE = false;
+TEST_MODE = true;
 
 const {Client, Collection, GatewayIntentBits, REST, Routes} = require('discord.js');
 const fs = require('fs');
@@ -20,38 +20,43 @@ const client = new Client({ intents: [
 client.once('ready', () => {
 	console.log('Ready!');
 	console.log(`Logged in as ${client.user.tag}!`);
-	deployCommands();
+
+	client.commands = new Collection();
+	const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+	for (const file of commandFiles) {
+		const command = require(`./commands/${file}`);
+		client.commands.set(command.data.name, command);
+	}
 });
 
-token = auth.token;
-GUILD_ID = auth.guild;
+var token = auth.token;
+var GUILD_ID = auth.guild;
+var CLIENT_ID = auth.clientID;
 if(TEST_MODE){
+	token = auth.testToken;
 	GUILD_ID = auth.testGuild;
-	token = auth.test;
+	CLIENT_ID = auth.testClientID;
 }
 
 client.login(token);
-client.commands = new Collection();
 
 // SET UP COMMANDS
 
 async function deployCommands(){
-	client.commands.clear();
+	const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 	const commands = [];
-	var commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 	for (const file of commandFiles) {
 		const command = require(`./commands/${file}`);
 		commands.push(command.data.toJSON());
-		client.commands.set(command.data.name, command);
 	}
 
-	const rest = new REST({ version: '10' }).setToken(token);
+	const rest = new REST().setToken(token);
 
 	try{
 		console.log("Refreshing application commands");
-		await rest.put(Routes.applicationCommands(client.user.id), { body: commands })
-		console.log('Successfully registered application commands.')
+		const data = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+		console.log(`Successfully registered ${data.length} application commands.`);
 	}
 	catch(err){
 		console.error(err);
@@ -133,6 +138,10 @@ client.on('messageCreate', async message => {
 
 			case "first":
 				first(message);
+			break;
+
+			case "deploycommands":
+				deployCommands();
 			break;
 		}
 	}

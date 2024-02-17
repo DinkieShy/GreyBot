@@ -17,6 +17,12 @@ module.exports = {
 
 	async execute(interaction){
 		const managedRoles = await utils.loadFile("managedRoles");
+
+		if(managedRoles.length == 0){
+			interaction.reply("Looks like no roles are managed, sorry! (Tell Grey to go do /manage-roles)");
+			return;
+		}
+
 		var options = [];
 
 		for(var i = 0; i < managedRoles.length; i++){
@@ -36,6 +42,7 @@ module.exports = {
 					.setPlaceholder("Nothing Selected")
 					.addOptions(options)
 					.setMinValues(1)
+					.setMaxValues(options.length)
 			);
 
 		const cancelButton = new ActionRowBuilder()
