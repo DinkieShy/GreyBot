@@ -1,5 +1,5 @@
 
-TEST_MODE = true;
+TEST_MODE = false;
 
 const {Client, Collection, GatewayIntentBits, REST, Routes} = require('discord.js');
 const fs = require('fs');
